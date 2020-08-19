@@ -19,8 +19,10 @@ from gae.input_data import load_data
 from gae.model import GCNModelAE, GCNModelVAE
 from gae.preprocessing import preprocess_graph, construct_feed_dict, sparse_to_tuple, mask_test_edges
 
+tf.compat.v1.disable_eager_execution()
+
 # Settings
-flags = tf.app.flags
+flags = tf.compat.v1.flags
 FLAGS = flags.FLAGS
 flags.DEFINE_float('learning_rate', 0.01, 'Initial learning rate.')
 flags.DEFINE_integer('epochs', 200, 'Number of epochs to train.')
@@ -55,10 +57,10 @@ adj_norm = preprocess_graph(adj)
 
 # Define placeholders
 placeholders = {
-    'features': tf.sparse_placeholder(tf.float32),
-    'adj': tf.sparse_placeholder(tf.float32),
-    'adj_orig': tf.sparse_placeholder(tf.float32),
-    'dropout': tf.placeholder_with_default(0., shape=())
+    'features': tf.compat.v1.sparse_placeholder(tf.float32),
+    'adj': tf.compat.v1.sparse_placeholder(tf.float32),
+    'adj_orig': tf.compat.v1.sparse_placeholder(tf.float32),
+    'dropout': tf.compat.v1.placeholder_with_default(0., shape=())
 }
 
 num_nodes = adj.shape[0]
@@ -78,24 +80,24 @@ pos_weight = float(adj.shape[0] * adj.shape[0] - adj.sum()) / adj.sum()
 norm = adj.shape[0] * adj.shape[0] / float((adj.shape[0] * adj.shape[0] - adj.sum()) * 2)
 
 # Optimizer
-with tf.name_scope('optimizer'):
+with tf.compat.v1.name_scope('optimizer'):
     if model_str == 'gcn_ae':
         opt = OptimizerAE(preds=model.reconstructions,
-                          labels=tf.reshape(tf.sparse_tensor_to_dense(placeholders['adj_orig'],
+                          labels=tf.reshape(tf.sparse.to_dense(placeholders['adj_orig'],
                                                                       validate_indices=False), [-1]),
                           pos_weight=pos_weight,
                           norm=norm)
     elif model_str == 'gcn_vae':
         opt = OptimizerVAE(preds=model.reconstructions,
-                           labels=tf.reshape(tf.sparse_tensor_to_dense(placeholders['adj_orig'],
+                           labels=tf.reshape(tf.sparse.to_dense(placeholders['adj_orig'],
                                                                        validate_indices=False), [-1]),
                            model=model, num_nodes=num_nodes,
                            pos_weight=pos_weight,
                            norm=norm)
 
 # Initialize session
-sess = tf.Session()
-sess.run(tf.global_variables_initializer())
+sess = tf.compat.v1.Session()
+sess.run(tf.compat.v1.global_variables_initializer())
 
 cost_val = []
 acc_val = []
